@@ -65,25 +65,24 @@ def signup():
 @app.route("/signin", methods=["POST", "GET"])
 def signin():  # 用來進⾏驗證的函式
 
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-        username = request.form["username"]
-        password = request.form["password"]
-        mycursor = mydb.cursor()
-        mycursor.execute(
-            'SELECT * FROM member WHERE username = %s AND password= %s', (username, password))
-        account = mycursor.fetchone()
-        print(account)
-        if account:
-            #session["logged_in"] = True
-            #session["id"] = account["id"]
-            #session["name"] = account["name"]
-            #session["username"] = account["username"]
-            #session["password"] = account["password"]
-            return redirect(url_for('sucessful'))
-        else:
-            return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
-    mycursor.close()
-    mydb.close()
+    username = request.form["username"]
+    password = request.form["password"]
+    mycursor = mydb.cursor()
+    mycursor.execute(
+        'SELECT * FROM member WHERE username = %s AND password= %s', (username, password))
+    account = mycursor.fetchone()
+    print(account)
+    if account:
+        #session["logged_in"] = True
+        #session["id"] = account["id"]
+        #session["name"] = account["name"]
+        #session["username"] = account["username"]
+        #session["password"] = account["password"]
+        mycursor.close()
+        mydb.close()
+        return redirect(url_for('sucessful'))
+    else:
+        return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
 
 
 @app.route("/signout", methods=["POST", "GET"])

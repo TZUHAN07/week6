@@ -44,79 +44,92 @@ def signup():
     name = request.form["name"]
     username = request.form["username"]
     password = request.form["password"]
-    mycursor = mydb.cursor()
-    mycursor.execute("SELECT * FROM member WHERE username = %s ", (username,))
-    account = mycursor.fetchone()
-    if account:
-        message = "帳號已經被註冊"
-        return redirect(url_for("geterror", message=message))
-    else:
-        insert_data = (
-            "INSERT INTO member (name, username,password) VALUES (%s,%s,%s)")
-        val = (name, username, password)
-        mycursor.execute(insert_data, val)  # 執行sql語句
-        mydb.commit()  # 提交至數據庫執行
+    try:
+        mycursor = mydb.cursor()
+        mycursor.execute(
+            "SELECT * FROM member WHERE username = %s ", (username,))
+        account = mycursor.fetchone()
+        if account:
+            message = "帳號已經被註冊"
+            return redirect(url_for("geterror", message=message))
+        else:
+            insert_data = (
+                "INSERT INTO member (name, username,password) VALUES (%s,%s,%s)")
+            val = (name, username, password)
+            mycursor.execute(insert_data, val)  # 執行sql語句
+            mydb.commit()  # 提交至數據庫執行
+            return render_template("firstpage.html")
+    except:
+        print("Unexpected Error")
+    finally:
         mycursor.close()
         mydb.close()
-        return render_template("firstpage.html")
 
 
 @app.route("/signin", methods=["POST", "GET"])
 def signin():  # 用來進⾏驗證的函式
     username = request.form["username"]
     password = request.form["password"]
-    mycursor = mydb.cursor()
-    mycursor.execute(
-        "SELECT * FROM member WHERE username = %s AND password =%s", (username, password))
-    account = mycursor.fetchone()
-    print(account)
-    if account:
-        # session.permanent = True  # 若未登出 下次登入直接是登入狀態
-        session["id"] = account[0]
-        session["name"] = account[1]
-        session["username"] = account[2]
-        session["password"] = account[3]
+    try:
+        mycursor = mydb.cursor()
+        mycursor.execute(
+            "SELECT * FROM member WHERE username = %s AND password =%s", (username, password))
+        account = mycursor.fetchone()
+        if account:
+            # session.permanent = True  # 若未登出 下次登入直接是登入狀態
+            session["id"] = account[0]
+            session["name"] = account[1]
+            session["username"] = account[2]
+            session["password"] = account[3]
+            return redirect(url_for("sucessful"))
+        else:
+            return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
+    except:
+        print("Unexpected Error")
+    finally:
+        mycursor.close()
         mydb.close()
-        return redirect(url_for("sucessful"))
-    else:
-        return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
-
-    mycursor.close()
-    mydb.close()
 
 
 @app.route("/signout", methods=["GET"])
 def signout():  # 用來進⾏登出的函式
-    # session.pop("id", None)
-    # session.pop("name", None)
-    # session.pop("username", None)
-    # session.pop("password", None)
-    session.clear()
+    session.pop("id", None)
+    session.pop("name", None)
+    session.pop("username", None)
+    session.pop("password", None)
+    # session.clear()
     return redirect(url_for("firstpage"))
 
 
 @app.route("/message", methods=["post"])
 def message():
+
     content = request.form["message"]
     id = int(session["id"])  # 存放在 cookie 的 id
-    insert_data = ("INSERT INTO message(member_id, content) VALUES (%s, %s)")
-    val = (id, content)
-    mycursor.execute(insert_data, val)
-    mydb.commit()
+    try:
+        mycursor = mydb.cursor()
+        insert_data = (
+            "INSERT INTO message(member_id, content) VALUES (%s, %s)")
+        val = (id, content)
+        mycursor.execute(insert_data, val)
+        mydb.commit()
 
-    mycursor = mydb.cursor()
-    mycursor.execute(
-        "SELECT member.name,message.content FROM member INNER JOIN message ON member.id =message. member_id")
-    message = mycursor.fetchall()
-
-    for data in message:
-        name = message[data][0]
-        eachMessage = message[data][1]
+        mycursor.execute(
+            "SELECT member.name,message.content FROM member INNER JOIN message ON member.id =message. member_id")
+        message = mycursor.fetchall()
+        print(message)
+        for data in message:
+            name = message[data][0]
+            eachMessage = message[data][1]
         print(name, eachMessage)
-    mycursor.close()
-    mydb.close()
-    return render_template("member.html", name=name, message=eachMessage)
+        return render_template("member.html", name=name, message=eachMessage)
+
+    except:
+        print("Unexpected Error")
+    finally:
+        mycursor.close()
+        mydb.close()
 
 
 # 啟動網站伺服器，可透過post參數指定埠號
-app.run(port=3330, debug=True)
+app.run(port=3000, debug=True)
