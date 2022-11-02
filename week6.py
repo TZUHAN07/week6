@@ -2,6 +2,7 @@
 from flask import Flask, request, render_template, session, redirect, url_for, make_response
 # 載入Flask,Request 物件, render_template 函式,session,redirect函式
 import mysql.connector
+from mysql.connector import pooling
 
 
 # 建立Application 物件，可以設定靜態檔案的路徑處理
@@ -25,11 +26,29 @@ def firstpage():  # 用來回應網站首頁函式
 
 @app.route("/member")  # 建立/member對應的處理函式
 def sucessful():
-
+    name = session["name"]
+    print(name)
     # check if the users exist or not
-    # if not session.get("logged_in"):
-    #    return redirect("/")
-    return render_template("member.html")
+    if not session.get("name"):
+        return redirect("/")
+
+    mycursor = mydb.cursor()
+    mycursor.execute(
+        "SELECT member.name,message.content FROM member INNER JOIN message ON member.id =message. member_id")
+    message = mycursor.fetchall()
+    print(message)
+    total = len(message)
+
+    for data in range(total):
+        each_name = message[data][0]
+        each_message = message[data][1]
+        data += data
+        print(each_name)
+        print(each_message)
+
+    mycursor.close()
+    mydb.close()
+    # return render_template("member.html", name=session["name"], each_name=each_name, each_message=each_message)
 
 
 @app.route("/error")  # 建立/error對應的處理函式
@@ -64,7 +83,6 @@ def signup():
 
 @app.route("/signin", methods=["POST", "GET"])
 def signin():  # 用來進⾏驗證的函式
-
     username = request.form["username"]
     password = request.form["password"]
     mycursor = mydb.cursor()
@@ -73,25 +91,42 @@ def signin():  # 用來進⾏驗證的函式
     account = mycursor.fetchone()
     print(account)
     if account:
-        #session["logged_in"] = True
-        #session["id"] = account["id"]
-        #session["name"] = account["name"]
-        #session["username"] = account["username"]
-        #session["password"] = account["password"]
+        session["id"] = account[0]
+        session["name"] = account[1]
+        session["username"] = account[2]
+        session["password"] = account[3]
+        return redirect(url_for("sucessful"))
+
+    else:
         mycursor.close()
         mydb.close()
-        return redirect(url_for('sucessful'))
-    else:
         return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
 
 
-@app.route("/signout", methods=["POST", "GET"])
+@app.route("/signout", methods=["GET"])
 def signout():  # 用來進⾏登出的函式
-    #session.pop("name", None)
-    #session.pop("username", None)
-    #session.pop("password", None)
+    session.pop("id", None)
+    session.pop("name", None)
+    session.pop("username", None)
+    session.pop("password", None)
+    # session.clear()
     return redirect(url_for("firstpage"))
 
 
+@app.route("/message", methods=["post"])
+def message():
+    content = request.form["message"]
+    id = session["id"]  # 存放在 cookie 的 id
+    insert_data = (
+        "INSERT INTO message(member_id, content) VALUES (%s, %s)")
+    val = (id, content)
+    mycursor = mydb.cursor()
+    mycursor.execute(insert_data, val)
+    mydb.commit()
+    mycursor.close()
+    mydb.close()
+    return redirect(url_for("sucessful"))
+
+
 # 啟動網站伺服器，可透過post參數指定埠號
-app.run(port=3330, debug=True)
+app.run(port=3000, debug=True)

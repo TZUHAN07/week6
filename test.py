@@ -2,6 +2,7 @@
 from flask import Flask, request, render_template, session, redirect, url_for, make_response
 # 載入Flask,Request 物件, render_template 函式,session,redirect函式
 import mysql.connector
+from mysql.connector import pooling
 
 
 # 建立Application 物件，可以設定靜態檔案的路徑處理
@@ -29,6 +30,8 @@ def sucessful():
     # check if the users exist or not
     if not session.get("name"):
         return redirect("/")
+    name = session["name"]
+    print(name)
     return render_template("member.html", name=session["name"])
 
 
@@ -81,6 +84,8 @@ def signin():  # 用來進⾏驗證的函式
             session["name"] = account[1]
             session["username"] = account[2]
             session["password"] = account[3]
+            # mycursor.close()
+            print("good")
             return redirect(url_for("sucessful"))
         else:
             return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
@@ -103,26 +108,25 @@ def signout():  # 用來進⾏登出的函式
 
 @app.route("/message", methods=["post"])
 def message():
-
-    content = request.form["message"]
-    id = int(session["id"])  # 存放在 cookie 的 id
+    message = request.form["message"]
+    id = session["id"]  # 存放在 cookie 的 id
     try:
-        mycursor = mydb.cursor()
         insert_data = (
             "INSERT INTO message(member_id, content) VALUES (%s, %s)")
-        val = (id, content)
+        val = (id, message)
+        mycursor = mydb.cursor()
         mycursor.execute(insert_data, val)
         mydb.commit()
 
         mycursor.execute(
             "SELECT member.name,message.content FROM member INNER JOIN message ON member.id =message. member_id")
-        message = mycursor.fetchall()
-        print(message)
-        for data in message:
-            name = message[data][0]
-            eachMessage = message[data][1]
-        print(name, eachMessage)
-        return render_template("member.html", name=name, message=eachMessage)
+        content = mycursor.fetchall()
+        print(content)
+        for data in content:
+            name = content[data][0]
+            eachContent = content[data][1]
+        print(name, eachContent)
+        return render_template("member.html", name=name, message=eachContent)
 
     except:
         print("Unexpected Error")
