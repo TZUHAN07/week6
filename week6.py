@@ -13,7 +13,7 @@ app.secret_key = "any string but secret"  # 設定sessin的密鑰
 mydb = mysql.connector.connect(
     host="localhost",    # 主機名稱
     user="root",         # 帳號
-    password="j610114*",  # 密碼
+    password="",  # 密碼
     database='website'   # 資料庫名稱
 )
 
