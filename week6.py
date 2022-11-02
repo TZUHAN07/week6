@@ -2,7 +2,6 @@
 from flask import Flask, request, render_template, session, redirect, url_for, make_response
 # 載入Flask,Request 物件, render_template 函式,session,redirect函式
 import mysql.connector
-from mysql.connector import pooling
 
 
 # 建立Application 物件，可以設定靜態檔案的路徑處理
@@ -13,21 +12,18 @@ app.secret_key = "any string but secret"  # 設定sessin的密鑰
 mydb = mysql.connector.connect(
     host="localhost",    # 主機名稱
     user="root",         # 帳號
-    password="",  # 密碼
+    password="j610114*",  # 密碼
     database='website'   # 資料庫名稱
 )
 
 
 @app.route("/", methods=['GET'])
 def firstpage():  # 用來回應網站首頁函式
-
     return render_template("firstpage.html")
 
 
 @app.route("/member")  # 建立/member對應的處理函式
 def sucessful():
-    name = session["name"]
-    print(name)
     # check if the users exist or not
     if not session.get("name"):
         return redirect("/")
@@ -36,7 +32,6 @@ def sucessful():
     mycursor.execute(
         "SELECT member.name,message.content FROM member INNER JOIN message ON member.id =message. member_id")
     message = mycursor.fetchall()
-    print(message)
     total = len(message)
 
     for data in range(total):
@@ -48,7 +43,7 @@ def sucessful():
 
     mycursor.close()
     mydb.close()
-    # return render_template("member.html", name=session["name"], each_name=each_name, each_message=each_message)
+    return render_template("member.html", name=session["name"], each_name=each_name, each_message=each_message)
 
 
 @app.route("/error")  # 建立/error對應的處理函式
@@ -63,7 +58,6 @@ def signup():
     name = request.form["name"]
     username = request.form["username"]
     password = request.form["password"]
-    print(name)
     mycursor = mydb.cursor()
     mycursor.execute('SELECT * FROM member WHERE username = %s ', (username,))
     account = mycursor.fetchone()
@@ -89,7 +83,6 @@ def signin():  # 用來進⾏驗證的函式
     mycursor.execute(
         'SELECT * FROM member WHERE username = %s AND password= %s', (username, password))
     account = mycursor.fetchone()
-    print(account)
     if account:
         session["id"] = account[0]
         session["name"] = account[1]
@@ -98,6 +91,7 @@ def signin():  # 用來進⾏驗證的函式
         return redirect(url_for("sucessful"))
 
     else:
+
         mycursor.close()
         mydb.close()
         return redirect(url_for("geterror", message="帳號、或密碼輸入錯誤"))
